@@ -82,6 +82,9 @@ namespace Microsoft.BotBuilderSamples.Dialogs
                     // Run the BookingDialog giving it whatever details we have from the LUIS call, it will fill out the remainder.
                     return await stepContext.BeginDialogAsync(nameof(BookingDialog), bookingDetails, cancellationToken);
 
+                case FlightBooking.Intent.Greeting:
+                    await stepContext.Context.SendActivityAsync("Hi ! How can i help you ?");
+                    break;
                 case FlightBooking.Intent.GetWeather:
                     // We haven't implemented the GetWeatherDialog so we just display a TODO message.
                     var getWeatherMessageText = "TODO: get weather flow here";
@@ -118,7 +121,26 @@ namespace Microsoft.BotBuilderSamples.Dialogs
                 case FlightBooking.Intent.NoUpdates:
                     await stepContext.Context.SendActivityAsync("Thanks for the response.Let me query my BoK and try to help you..!");
                     await Task.Delay(3000);
-                    await stepContext.Context.SendActivityAsync("Response");
+                    await stepContext.Context.SendActivityAsync("Your phone will use Wi-Fi for calls and texts when cellular coverage isn’t available. This means that in a natural disaster or other emergency, it’ll work if connected to Wi-Fi." +
+                        "You can’t use Wi-Fi Calling in China, Cuba, North Korea, India, Iran, Israel, Pakistan, Saudi Arabia, Sudan, Syria, Turkey, United Arab Emirates, and Vietnam." +
+                        "If your phone has a Keep Wi-Fi on during sleep setting, we recommend turning it on so you don’t miss calls");
+                    await Task.Delay(3000);
+                    HeroCard plCardg = new HeroCard()
+                    {
+                        Text = "Click the below button to learn more about the Solution. ",
+                        Buttons = new List<CardAction>
+                {
+                    new CardAction(ActionTypes.OpenUrl, "Document", value: "https://troubleshoot.att.com/devicetroubleshoot/index.html#select-device/0")
+
+                }
+                    };
+                    var replyGamification = MessageFactory.Attachment(plCardg.ToAttachment());
+               
+
+
+                    await stepContext.Context.SendActivityAsync(replyGamification);
+
+
                     break;
                 default:
                     // Catch all for unhandled intents
