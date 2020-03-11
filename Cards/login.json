@@ -1,0 +1,56 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.0",
+  "body": [
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": 2,
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Name",
+              "wrap": true
+            },
+            {
+              "type": "Input.Text",
+              "id": "myName",
+              "placeholder": "{Name.placeholder}"
+            },
+            {
+              "type": "TextBlock",
+              "text": "Password",
+              "wrap": true
+            },
+            {
+              "type": "Input.Text",
+              "id": "myEmail",
+              "placeholder": "{Password.placeholder}",
+              "style": "Email"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": 1,
+          "items": [
+            {
+              "type": "Image",
+              "url": "{thumbnailUrl}",
+              "size": "auto"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Login"
+    }
+  ]
+}

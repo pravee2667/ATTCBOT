@@ -17,6 +17,7 @@ using Microsoft.Bot.Connector;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Text;
+using System.Data;
 
 
 
@@ -57,132 +58,182 @@ namespace Microsoft.BotBuilderSamples.Bots
             Logger.LogInformation("Running dialog with Message Activity.");
             var activity = turnContext.Activity;
             IMessageActivity reply = null;
-            var connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-            if (activity.Attachments != null && activity.Attachments.Any())
+            int flag = 1;
+            DBAccess db = new DBAccess();
+            DataTable dt = db.Select_Flag();
+            foreach (DataRow dr in dt.Rows)
             {
-                // We know the user is sending an attachment as there is at least one item
-
-                // in the Attachments list.
-                string replyText = string.Empty;
-                foreach (var file in activity.Attachments)
+               if( dr["flag"].Equals(0))
                 {
-                    var imageAttachment = activity.Attachments?.FirstOrDefault(a => a.ContentType.Contains("image"));
-                    HttpResponseMessage response;
-                    HttpClient client = new HttpClient();
-                    client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "789ecf62be6d45388ba246f4229a4cbb");
-                    using (var stream = await GetImageStream(connector, imageAttachment))
+                     flag = 0;
+                }
+               else
+                {
+                    flag = 1;
+                }
+            }
+
+                
+            var connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+            if (flag == 0)
+            {
+                var welcomeCard = CreateAdaptiveCardAttachment();
+                var response = MessageFactory.Attachment(welcomeCard, ssml: "Welcome to Bot Framework!");
+                db.Update_Flag();
+
+
+                await turnContext.SendActivityAsync(response, cancellationToken);
+               // await turnContext.SendActivityAsync("Oh! This image sees off the context….Please can you check and upload the issue-screenshot?");
+            }
+            else
+            {
+
+
+                if (activity.Attachments != null && activity.Attachments.Any())
+                {
+                    // We know the user is sending an attachment as there is at least one item
+
+                    // in the Attachments list.
+                    string replyText = string.Empty;
+                    foreach (var file in activity.Attachments)
                     {
-                        //return await this.captionService.GetCaptionAsync(stream);
-                        byte[] byteresponse = null;
+                        var imageAttachment = activity.Attachments?.FirstOrDefault(a => a.ContentType.Contains("image"));
+                        HttpResponseMessage response;
+                        HttpClient client = new HttpClient();
+                        client.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", "789ecf62be6d45388ba246f4229a4cbb");
+                        using (var stream = await GetImageStream(connector, imageAttachment))
+                        {
+                            //return await this.captionService.GetCaptionAsync(stream);
+                            byte[] byteresponse = null;
 
-                        using (var binaryReader = new BinaryReader(stream))
-                        {
-                            byteresponse = binaryReader.ReadBytes(328093);
-                        }
-                        using (ByteArrayContent content = new ByteArrayContent(byteresponse))
-                        {
-                            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                            response = await client.PostAsync("https://atndtocr.cognitiveservices.azure.com/vision/v2.1/ocr" + "?" + "mode=Handwritten", content);
-                            //string operationLocation = response.Headers.GetValues("Operation-Location").FirstOrDefault();
-                            //response = await client.PostAsync(uri, content);
-                        }
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            
-                            //string operationLocation = response.Headers.GetValues("Operation-Location").FirstOrDefault();
-                            string contentString;
-                            int res = 0;
-                            do
+                            using (var binaryReader = new BinaryReader(stream))
                             {
-                                System.Threading.Thread.Sleep(1000);
-                                //response = await client.GetAsync(operationLocation);
-                                contentString = await response.Content.ReadAsStringAsync();
-                                ++res;
+                                byteresponse = binaryReader.ReadBytes(328093);
                             }
-                            while (res < 2 && contentString.IndexOf("\"status\":\"Succeeded\"") == -1);
-
-                            //if (res == 10 && contentString.IndexOf("\"status\":\"Succeeded\"") == -1)
-                            //{
-                            //    //return null;
-                            //}
-                            // var rootobjet = JsonConvert.DeserializeObject<RootObjec>(contentString);
-
-                            StringBuilder newbuilder3 = new StringBuilder();
-                            var rootobject = JsonConvert.DeserializeObject<RootObject>(contentString);
-
-                            var rootobjec = JsonConvert.DeserializeObject<RootObjec>(contentString);
-                            dynamic rootob=JsonConvert.DeserializeObject(contentString);
-                            
-                            if (rootob.regions.Count!=0)
+                            using (ByteArrayContent content = new ByteArrayContent(byteresponse))
                             {
-                                var regio = rootob.regions[0];
-                                foreach (var alb in regio.lines)
+                                content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                                response = await client.PostAsync("https://atndtocr.cognitiveservices.azure.com/vision/v2.1/ocr" + "?" + "mode=Handwritten", content);
+                                //string operationLocation = response.Headers.GetValues("Operation-Location").FirstOrDefault();
+                                //response = await client.PostAsync(uri, content);
+                            }
+
+                            if (response.IsSuccessStatusCode)
+                            {
+
+                                //string operationLocation = response.Headers.GetValues("Operation-Location").FirstOrDefault();
+                                string contentString;
+                                int res = 0;
+                                do
                                 {
-                                    var lin = alb.words;
-                                    foreach (var linn in lin)
+                                    System.Threading.Thread.Sleep(1000);
+                                    //response = await client.GetAsync(operationLocation);
+                                    contentString = await response.Content.ReadAsStringAsync();
+                                    ++res;
+                                }
+                                while (res < 2 && contentString.IndexOf("\"status\":\"Succeeded\"") == -1);
+
+                                //if (res == 10 && contentString.IndexOf("\"status\":\"Succeeded\"") == -1)
+                                //{
+                                //    //return null;
+                                //}
+                                // var rootobjet = JsonConvert.DeserializeObject<RootObjec>(contentString);
+
+                                StringBuilder newbuilder3 = new StringBuilder();
+                                var rootobject = JsonConvert.DeserializeObject<RootObject>(contentString);
+
+                                var rootobjec = JsonConvert.DeserializeObject<RootObjec>(contentString);
+                                dynamic rootob = JsonConvert.DeserializeObject(contentString);
+
+                                if (rootob.regions.Count != 0)
+                                {
+                                    var regio = rootob.regions[0];
+                                    foreach (var alb in regio.lines)
                                     {
-                                        var tex = linn.text;
-                                        newbuilder3.Append(" ");
-                                        newbuilder3.Append(tex.ToString());
+                                        var lin = alb.words;
+                                        foreach (var linn in lin)
+                                        {
+                                            var tex = linn.text;
+                                            newbuilder3.Append(" ");
+                                            newbuilder3.Append(tex.ToString());
+                                        }
+
                                     }
 
-                                }
 
+                                    //StringBuilder stringBuilder = null;
+                                    string respone = string.Empty;
+                                    var newbil = response;
 
-                                //StringBuilder stringBuilder = null;
-                                string respone = string.Empty;
-                                var newbil = response;
+                                    await turnContext.SendActivityAsync("I understand that ..");
+                                    await Task.Delay(4000);
+                                    await turnContext.SendActivityAsync(newbuilder3.ToString());
 
-                                await turnContext.SendActivityAsync("I understand that ..");
-                                await Task.Delay(4000);
-                                await turnContext.SendActivityAsync(newbuilder3.ToString());
-
-                                HeroCard plCardissue = new HeroCard()
-                                {
-                                    Text = "Please make a choice in which area are you looking to assist the customer?",
-                                    Buttons = new List<CardAction>
+                                    HeroCard plCardissue = new HeroCard()
+                                    {
+                                        Text = "Is my understanding correct? ",
+                                        Buttons = new List<CardAction>
                          {
                                     new CardAction(ActionTypes.PostBack, "No, I would rather type", value: "Please type"),
                                     new CardAction(ActionTypes.PostBack, "Yes, but let me add/correct some words", value: "correct some words"),
                                     new CardAction(ActionTypes.PostBack, "Yes, Perfect! Go ahead", value: "No Updates are required ")
-         
-                        }
-                                };
-
-                                var replyFeedback = MessageFactory.Attachment(plCardissue.ToAttachment());
-                                await turnContext.SendActivityAsync(replyFeedback, cancellationToken);
-                            }
-                            else
-                            {
-                                await turnContext.SendActivityAsync("Oh! This image sees off the context….Please can you check and upload the issue-screenshot?");
-                            }
 
                         }
-                     
+                                    };
+
+                                    var replyFeedback = MessageFactory.Attachment(plCardissue.ToAttachment());
+                                    await turnContext.SendActivityAsync(replyFeedback, cancellationToken);
+                                }
+                                else
+                                {
+                                    await turnContext.SendActivityAsync("Oh! This image sees off the context….Please can you check and upload the issue-screenshot?");
+                                }
+
+                            }
+
+
+                        }
+
+
 
                     }
 
+                }
+                else
+                {
 
 
+
+
+
+
+
+                    // var reply = ProcessInput(turnContext);
+                    //await turnContext.SendActivityAsync(reply, cancellationToken);
+                    // Run the Dialog with the new message Activity.
+                    await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
                 }
             }
-            else
-            {
-               
-
-
-
-
-
-
-                // var reply = ProcessInput(turnContext);
-                //await turnContext.SendActivityAsync(reply, cancellationToken);
-                // Run the Dialog with the new message Activity.
-                await Dialog.RunAsync(turnContext, ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
-            }
-           
         }
+
+        private Attachment CreateAdaptiveCardAttachment()
+        {
+            var cardResourcePath = "CoreBot.Cards.login.json";
+
+            using (var stream = GetType().Assembly.GetManifestResourceStream(cardResourcePath))
+            {
+                using (var reader = new StreamReader(stream))
+                {
+                    var adaptiveCard = reader.ReadToEnd();
+                    return new Attachment()
+                    {
+                        ContentType = "application/vnd.microsoft.card.adaptive",
+                        Content = JsonConvert.DeserializeObject(adaptiveCard),
+                    };
+                }
+            }
+        }
+
         private static async Task<Stream> GetImageStream(ConnectorClient connector, Attachment imageAttachment)
         {
             using (var httpClient = new HttpClient())

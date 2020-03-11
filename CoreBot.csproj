@@ -6,10 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Cards\login.json" />
     <Content Remove="Cards\welcomeCard.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Cards\login.json" />
     <EmbeddedResource Include="Cards\welcomeCard.json" />
   </ItemGroup>
 

@@ -129,10 +129,10 @@ namespace Microsoft.BotBuilderSamples.Dialogs
                     {
                         Text = "Click the below button to learn more about the Solution. ",
                         Buttons = new List<CardAction>
-                {
+                        {
                     new CardAction(ActionTypes.OpenUrl, "Document", value: "https://troubleshoot.att.com/devicetroubleshoot/index.html#select-device/0")
 
-                }
+                     }
                     };
                     var replyGamification = MessageFactory.Attachment(plCardg.ToAttachment());
                
@@ -144,10 +144,36 @@ namespace Microsoft.BotBuilderSamples.Dialogs
                     break;
                 default:
                     // Catch all for unhandled intents
-                    var didntUnderstandMessageText = $"Sorry, I didn't get that. Please try asking in a different way.)";
-                    var didntUnderstandMessage = MessageFactory.Text(didntUnderstandMessageText, didntUnderstandMessageText, InputHints.IgnoringInput);
-                    await stepContext.Context.SendActivityAsync(didntUnderstandMessage, cancellationToken);
-                    break;
+                    String intentText=luisResult.Text;
+                    if(intentText.All(char.IsDigit))
+                    {
+                        await stepContext.Context.SendActivityAsync("Thanks for helping with the customer’s account/phone number for validation.");
+                        await Task.Delay(2000);
+                        HeroCard plCardissue1 = new HeroCard()
+                        {
+                            Text = "Please make a choice in which area are you looking to assist the customer?",
+                            Buttons = new List<CardAction>
+                         {
+                    new CardAction(ActionTypes.PostBack, "Network Issues", value: "Looking for Network Issues"),
+                    new CardAction(ActionTypes.PostBack, "Data Issues", value: "Data Issues are present"),
+                    new CardAction(ActionTypes.PostBack, "Billing & Accounting ", value: "Billing and Accounting are Pending "),
+                    new CardAction(ActionTypes.PostBack, "Plan Upgrades & Offers", value: "Plan Upgrades and Offers"),
+                    new CardAction(ActionTypes.PostBack, "Tracking Existing SR", value: "Track the Exisiting SR")
+                        }
+                        };
+
+                        var replyFeedback1 = MessageFactory.Attachment(plCardissue1.ToAttachment());
+                        await stepContext.Context.SendActivityAsync(replyFeedback1, cancellationToken);
+                        break;
+                    }
+                    else
+                    {
+                        var didntUnderstandMessageText = $"Sorry, I didn't get that. Please try asking in a different way.)";
+                        var didntUnderstandMessage = MessageFactory.Text(didntUnderstandMessageText, didntUnderstandMessageText, InputHints.IgnoringInput);
+                        await stepContext.Context.SendActivityAsync(didntUnderstandMessage, cancellationToken);
+                        break;
+                    }
+                    
             }
 
             return await stepContext.NextAsync(null, cancellationToken);
