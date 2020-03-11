@@ -57,7 +57,12 @@ namespace Microsoft.BotBuilderSamples.Bots
         {
             Logger.LogInformation("Running dialog with Message Activity.");
             var activity = turnContext.Activity;
-            IMessageActivity reply = null;
+            if (activity.Value != null)
+            {
+                await turnContext.SendActivityAsync("WElcome mark..");
+                return;
+            }
+                IMessageActivity reply = null;
             int flag = 1;
             DBAccess db = new DBAccess();
             DataTable dt = db.Select_Flag();
@@ -70,6 +75,7 @@ namespace Microsoft.BotBuilderSamples.Bots
                else
                 {
                     flag = 1;
+
                 }
             }
 
